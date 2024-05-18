@@ -10,6 +10,7 @@ from secret import api_key
 
 JD_source_url = '../../dataBase/JD/processed_JD/output_output2_1-猎聘jd数据20000条.xlsx'
 target_url = '../../dataBase/JD/vectorized_JD/New vectorized_1-猎聘jd数据20000条.xlsx'
+target_csv_url = '../../dataBase/JD/vectorized_JD/New vectorized_1-猎聘jd数据20000条.csv'
 
 dimensions = ['管理与领导', '战略规划', '财务与预算', '市场营销与销售', '人力资源', '运营效率', '客户关系', '技术与创新',
               '质量控制', '物流与供应链', '教育与培训', '健康与安全', '研究与开发', '法律与合规', '公共关系与传媒']
@@ -19,8 +20,8 @@ def read_JD_data(JD_url):
     # 指定需要读取的列
     columns_to_read = ['行业', '公司名称', '企业行业', '职责描述']
     JD_data = pd.read_excel(JD_url, usecols=columns_to_read)
-    # 测试阶段取前20条数据
-    JD_data = JD_data.head(20)
+    # 测试阶段取前2000条数据
+    JD_data = JD_data.head(2000)
     # print(JD_data)
     return JD_data
 
@@ -47,7 +48,7 @@ def gpt_process_JD_data(JD_data):
             # 使用GPT-3.5分析文本
             response = api_key.client_gpt.embeddings.create(
                 input=f'{JD_data["职责描述"]}',
-                model='text-embedding-3-small'
+                model='text-embedding-3-small',
             )
             result = response.data[0].embedding
             # print(result)
@@ -61,7 +62,8 @@ def gpt_process_JD_data(JD_data):
 def save_processed_data(processed_data, target_url):
     try:
         processed_data_df = pd.DataFrame(processed_data)  # 创建DataFrame
-        processed_data_df.to_excel(target_url, index=False)
+        processed_data_df.to_csv(target_url, index=False)
+        # processed_data_df.to_excel(target_url, index=False)
         return
     except Exception as e:
         print("文件保存失败！")
@@ -90,6 +92,7 @@ def vectorize_JD_data(JD_data, target_url):
         for index, row in tqdm(JD_data.iterrows(), total=len(JD_data), desc="vectorization JD data"):
             if index < last_position:
                 continue
+            row['职责描述'] = row['职责描述'].replace("\n", " ")
             result = gpt_process_JD_data(JD_data)
             # decimals = result.split()
             # for i, decimal in enumerate(decimals):
@@ -113,11 +116,11 @@ def JD_main():
     print('获取完成')
     # print(JD_data['公司名称'])
     print('JD数据向量化...')
-    processed_data = vectorize_JD_data(JD_data, target_url)
+    processed_data = vectorize_JD_data(JD_data, target_csv_url)
     print(f'JD数据已完成向量化!')
     print('正在保存处理结果...')
-    save_processed_data(processed_data, target_url)
-    print(f"已保存到文件'{target_url}'中")
+    save_processed_data(processed_data, target_csv_url)
+    print(f"已保存到文件'{target_csv_url}'中")
 
 
 if __name__ == '__main__':

@@ -12,18 +12,37 @@ dimensions = ['管理与领导', '战略规划', '财务与预算', '市场营�
               '质量控制', '物流与供应链', '教育与培训', '健康与安全', '研究与开发', '法律与合规', '公共关系与传媒']
 occupation_url = '../../dataBase/ONET/raw_db_28_2_excel/Occupation Data.xlsx'
 target_url = '../../dataBase/ONET/vectorized_ONET/New Occupation Data vectorized.xlsx'
+target_csv_url = '../../dataBase/ONET/vectorized_ONET/New Occupation Data vectorized.csv'
 
+
+def gpt_translate(desc):
+    try:
+        completion = api_key.client_gpt.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user",
+                 "content":f'给出以下文本的中文翻译：{desc}'
+                           f'要求输出的只有翻译后的内容！'}
+            ]
+        )
+        result = completion.choices[0].message.content
+        return result
+    except Exception as e:
+        print('gpt 翻译出现错误')
+        print(f'Error occurred: {e}')
 
 def gpt_process_description(description):
     while True:
         try:
+            description = gpt_translate(description)
             # 使用GPT-3.5分析文本
             response = api_key.client_gpt.embeddings.create(
                 input=f'{description}',
-                model='text-embedding-3-small'
+                model='text-embedding-3-small',
             )
             result = response.data[0].embedding
-            return result
+            return result, description
             # print(result)
             # 检查结果格式是否正确
             # if check_result_format(result):
@@ -84,7 +103,7 @@ def vectorize_data(url, target_url):
         for index, row in tqdm(data.iterrows(), total=len(data), desc="vectorization data"):
             if index < last_position:
                 continue
-            result = gpt_process_description(row['Description'])
+            result, row['Description'] = gpt_process_description(row['Description'])
             row['vectorization'] = result
             processed_data.append(row)
             last_position += 1
@@ -102,7 +121,7 @@ def vectorize_data(url, target_url):
             #         # print(processed_data)
             #         last_position += 1
         processed_data_df = pd.DataFrame(processed_data)  # 创建DataFrame
-        processed_data_df.to_excel(target_url, index=False)
+        processed_data_df.to_csv(target_url, index=False)
         print(f'文件{url}已完成向量化!')
         print(f"已保存到文件'{target_url}'中")
         return
@@ -111,7 +130,7 @@ def vectorize_data(url, target_url):
         print(f'已成功处理{last_position}条数据')
         print('正在保存已处理数据...')
         processed_data_df = pd.DataFrame(processed_data)  # 创建DataFrame
-        processed_data_df.to_excel(target_url, index=False)  # 保存到Excel
+        processed_data_df.to_csv(target_url, index=False)  # 保存到Excel
         print(f'已保存到文件{target_url}中')
         with open('checkpoint.txt', "w") as f:
             f.write(str(index + 1))  # 下次从下一个位置开始处理
@@ -152,7 +171,7 @@ def vectorize_data(url, target_url):
 
 
 def ONET_main():
-    vectorize_data(occupation_url, target_url)
+    vectorize_data(occupation_url, target_csv_url)
 
 
 if __name__ == "__main__":

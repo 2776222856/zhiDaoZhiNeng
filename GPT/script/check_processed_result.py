@@ -8,6 +8,7 @@ from secret import api_key
 
 source_url = "../../dataBase/New_JD_ONET_db.xlsx"
 target_url = "../../dataBase/JD_ONET_checked.xlsx"
+target_csv_url = "../../dataBase/JD_ONET_checked.csv"
 
 
 # 使用GPT-3.5检查指标信息
