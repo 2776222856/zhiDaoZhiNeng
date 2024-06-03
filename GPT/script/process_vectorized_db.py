@@ -89,15 +89,17 @@ def compute_Cosine_Similarity(JD_data, ONET_data, k=5):
     for _, jd_row in tqdm(JD_data.iterrows(), total=len(JD_data), desc="compute distance"):
         max_similarity = []
         closest_onet_rows = []
-        print('-----------------------------余弦相似度--------------------------------')
+        jd_vector = np.array(ast.literal_eval(jd_row['vectorization']))
+        # max_similarity = -1
+        # closest_onet_row = None
+        # print('-----------------------------余弦相似度--------------------------------')
         for _, onet_row in ONET_data.iterrows():
             # 提取向量值并转换为numpy数组
-            jd_vector = np.array(ast.literal_eval(jd_row['vectorization']))
             onet_vector = np.array(ast.literal_eval(onet_row['vectorization']))
             # 计算余弦相似度
             cosine_similarity = np.dot(jd_vector, onet_vector) / (np.linalg.norm(jd_vector) * np.linalg.norm(onet_vector))
             # 更新最大相似度列表和最近数据列表
-            print(cosine_similarity)
+            # print(cosine_similarity)
             if len(max_similarity) < k:
                 max_similarity.append(cosine_similarity)
                 closest_onet_rows.append(onet_row)
@@ -108,7 +110,7 @@ def compute_Cosine_Similarity(JD_data, ONET_data, k=5):
                     max_similarity[min_similarity_index] = cosine_similarity
                     closest_onet_rows[min_similarity_index] = onet_row
         # 对 max_similarity 列表进行排序
-        pdb.set_trace()
+        # pdb.set_trace()
         max_similarity_sorted_indices = np.argsort(max_similarity)[::-1]  # 对相似度从高到低排序
         # max_similarity_sorted_indices = np.argsort(max_similarity)  # 对相似度从低到高排序
 
@@ -117,9 +119,9 @@ def compute_Cosine_Similarity(JD_data, ONET_data, k=5):
         # jd_row仅保留前四列数据
         jd_row_selected = jd_row[:4]
         similarity.append((jd_row_selected, closest_onet_rows_sorted[:k], max_similarity_sorted[:k]))
-        print('-----------------------------匹配结果--------------------------------')
-        print(similarity)
-        pdb.set_trace()
+        # print('-----------------------------匹配结果--------------------------------')
+        # print(similarity)
+        # pdb.set_trace()
     return similarity
 
 
@@ -157,6 +159,7 @@ def vector_main():
     # closest_distances = compute_distances(JD_data, ONET_data, k=5)
     # print('正在计算Jaccard相似度...')
     # closest_distances = compute_Jaccard_Similarity(JD_data, ONET_data, k=5)
+    print('-----------------------------余弦相似度--------------------------------')
     closest_distances = compute_Cosine_Similarity(JD_data, ONET_data, k=5)
     print('计算完成!')
     print('正在保存数据...')
